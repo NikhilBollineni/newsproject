@@ -1,6 +1,6 @@
-import { Search, Bell } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import NotificationBell from "@/components/notifications/notification-bell";
 
 interface HeaderProps {
   title: string;
@@ -29,9 +29,7 @@ export default function Header({ title, subtitle, onSearch }: HeaderProps) {
               <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
             </div>
           )}
-          <Button variant="ghost" size="icon" data-testid="button-notifications">
-            <Bell className="w-5 h-5" />
-          </Button>
+          <NotificationBell />
         </div>
       </div>
     </header>

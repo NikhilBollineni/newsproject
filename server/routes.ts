@@ -1,9 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { insertArticleSchema, insertDocumentSchema } from "@shared/schema";
+import { insertArticleSchema, insertDocumentSchema, insertNotificationSchema } from "@shared/schema";
 import { analyzeArticleSentiment, categorizeArticle, analyzeDocument, generateAIInsights } from "./services/openai";
 import { NewsService } from "./services/news-service";
+import { notificationService } from "./services/notification-service";
 import multer from "multer";
 import { z } from "zod";
 
@@ -101,17 +103,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ message: "No new articles found", count: 0 });
       }
 
-      // Store the fetched articles
+      // Store the fetched articles and check for notifications
       const storedArticles = [];
       for (const articleData of freshArticles) {
         try {
           const article = await storage.createArticle(articleData);
           storedArticles.push(article);
+          
+          // Check if this article should trigger notifications
+          await notificationService.handleNewArticle(article);
         } catch (error) {
           console.error('Error storing article:', error);
           // Continue with other articles
         }
       }
+
+      // Check for sentiment alerts after processing all articles
+      await notificationService.checkSentimentAlerts();
 
       res.json({ 
         message: `Successfully fetched and stored ${storedArticles.length} new articles`,
@@ -231,6 +239,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Notification endpoints
+  app.get("/api/notifications", async (req, res) => {
+    try {
+      const notifications = await storage.getNotifications();
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  app.post("/api/notifications", async (req, res) => {
+    try {
+      const validatedData = insertNotificationSchema.parse(req.body);
+      const notification = await notificationService.createNotification(validatedData);
+      res.status(201).json(notification);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create notification" });
+    }
+  });
+
+  app.patch("/api/notifications/:id/read", async (req, res) => {
+    try {
+      const notification = await notificationService.markNotificationRead(req.params.id);
+      if (!notification) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      res.json(notification);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
+  app.get("/api/notifications/unread-count", async (req, res) => {
+    try {
+      const count = await storage.getUnreadNotificationCount();
+      res.json({ count });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get unread count" });
+    }
+  });
+
   const httpServer = createServer(app);
+  
+  // WebSocket server for real-time notifications
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  wss.on('connection', (ws) => {
+    console.log('New WebSocket client connected');
+    notificationService.addClient(ws);
+    
+    ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        console.log('Received WebSocket message:', data);
+      } catch (error) {
+        console.error('Invalid WebSocket message:', error);
+      }
+    });
+  });
+
   return httpServer;
 }

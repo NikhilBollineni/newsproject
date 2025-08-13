@@ -40,6 +40,17 @@ export const documents = pgTable("documents", {
   uploadedAt: timestamp("uploaded_at").notNull().defaultNow(),
 });
 
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  type: text("type").notNull(), // breaking_news, market_alert, sentiment_change
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  data: jsonb("data"), // Additional data like article ID, industry, etc.
+  priority: text("priority").notNull().default("medium"), // high, medium, low
+  read: boolean("read").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
 });
@@ -54,6 +65,11 @@ export const insertDocumentSchema = createInsertSchema(documents).omit({
   uploadedAt: true,
 });
 
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -62,3 +78,6 @@ export type Article = typeof articles.$inferSelect;
 
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 export type Document = typeof documents.$inferSelect;
+
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = typeof notifications.$inferSelect;

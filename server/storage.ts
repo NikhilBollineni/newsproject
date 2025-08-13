@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Article, type InsertArticle, type Document, type InsertDocument } from "@shared/schema";
+import { type User, type InsertUser, type Article, type InsertArticle, type Document, type InsertDocument, type Notification, type InsertNotification } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -36,17 +36,25 @@ export interface IStorage {
     sentimentBreakdown: Record<string, number>;
     trendingTags: Array<{ tag: string; count: number; change: number }>;
   }>;
+  
+  // Notifications
+  getNotifications(): Promise<Notification[]>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationRead(id: string): Promise<Notification | undefined>;
+  getUnreadNotificationCount(): Promise<number>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private articles: Map<string, Article>;
   private documents: Map<string, Document>;
+  private notifications: Map<string, Notification>;
 
   constructor() {
     this.users = new Map();
     this.articles = new Map();
     this.documents = new Map();
+    this.notifications = new Map();
     
     // Initialize with sample data
     this.initializeSampleData();
@@ -427,6 +435,36 @@ export class MemStorage implements IStorage {
       sentimentBreakdown,
       trendingTags
     };
+  }
+
+  // Notification methods
+  async getNotifications(): Promise<Notification[]> {
+    return Array.from(this.notifications.values())
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const newNotification: Notification = {
+      id: randomUUID(),
+      ...notification,
+      createdAt: new Date()
+    };
+    
+    this.notifications.set(newNotification.id, newNotification);
+    return newNotification;
+  }
+
+  async markNotificationRead(id: string): Promise<Notification | undefined> {
+    const notification = this.notifications.get(id);
+    if (!notification) return undefined;
+
+    const updatedNotification = { ...notification, read: true };
+    this.notifications.set(id, updatedNotification);
+    return updatedNotification;
+  }
+
+  async getUnreadNotificationCount(): Promise<number> {
+    return Array.from(this.notifications.values()).filter(n => !n.read).length;
   }
 }
 
