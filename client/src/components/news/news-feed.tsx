@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, Download } from "lucide-react";
+import { RefreshCw, Download, Newspaper } from "lucide-react";
 import NewsArticle from "./news-article";
 import { articlesApi } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 
 interface NewsFilters {
   category?: string;
@@ -22,6 +24,7 @@ interface NewsFeedProps {
 
 export default function NewsFeed({ searchQuery, showBookmarked }: NewsFeedProps) {
   const [filters, setFilters] = useState<NewsFilters>({});
+  const { toast } = useToast();
 
   const { data: articles = [], isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['/api/articles', filters, searchQuery, showBookmarked],
@@ -31,6 +34,36 @@ export default function NewsFeed({ searchQuery, showBookmarked }: NewsFeedProps)
       bookmarked: showBookmarked
     }),
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Mutation to fetch fresh news
+  const fetchNewsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/articles/fetch-news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch news');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Fresh News Fetched",
+        description: data.message,
+      });
+      // Invalidate and refetch articles
+      queryClient.invalidateQueries({ queryKey: ['/api/articles'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to fetch fresh news",
+        variant: "destructive",
+      });
+    }
   });
 
   const handleFilterChange = (key: keyof NewsFilters, value: string) => {
@@ -108,6 +141,15 @@ export default function NewsFeed({ searchQuery, showBookmarked }: NewsFeedProps)
             </div>
             
             <div className="flex items-center space-x-2">
+              <Button 
+                onClick={() => fetchNewsMutation.mutate()}
+                disabled={fetchNewsMutation.isPending}
+                className="bg-blue-600 text-white hover:bg-blue-700"
+                data-testid="button-fetch-news"
+              >
+                <Newspaper className={`w-4 h-4 mr-2 ${fetchNewsMutation.isPending ? 'animate-pulse' : ''}`} />
+                {fetchNewsMutation.isPending ? 'Fetching...' : 'Fetch Fresh News'}
+              </Button>
               <Button 
                 onClick={() => refetch()}
                 disabled={isRefetching}

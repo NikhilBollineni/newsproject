@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertArticleSchema, insertDocumentSchema } from "@shared/schema";
 import { analyzeArticleSentiment, categorizeArticle, analyzeDocument, generateAIInsights } from "./services/openai";
+import { NewsService } from "./services/news-service";
 import multer from "multer";
 import { z } from "zod";
 
@@ -12,6 +13,9 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize news service
+  const newsService = new NewsService();
+  
   // Articles endpoints
   app.get("/api/articles", async (req, res) => {
     try {
@@ -84,6 +88,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(article);
     } catch (error) {
       res.status(500).json({ message: "Failed to toggle bookmark" });
+    }
+  });
+
+  // Fetch fresh news from external sources
+  app.post("/api/articles/fetch-news", async (req, res) => {
+    try {
+      console.log('Starting fresh news fetch...');
+      const freshArticles = await newsService.fetchLatestNews();
+      
+      if (freshArticles.length === 0) {
+        return res.json({ message: "No new articles found", count: 0 });
+      }
+
+      // Store the fetched articles
+      const storedArticles = [];
+      for (const articleData of freshArticles) {
+        try {
+          const article = await storage.createArticle(articleData);
+          storedArticles.push(article);
+        } catch (error) {
+          console.error('Error storing article:', error);
+          // Continue with other articles
+        }
+      }
+
+      res.json({ 
+        message: `Successfully fetched and stored ${storedArticles.length} new articles`,
+        count: storedArticles.length,
+        articles: storedArticles
+      });
+    } catch (error) {
+      console.error('News fetch error:', error);
+      res.status(500).json({ 
+        message: "Failed to fetch fresh news", 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Test news service connection
+  app.get("/api/news/test", async (req, res) => {
+    try {
+      const isConnected = await newsService.testConnection();
+      res.json({ 
+        connected: isConnected,
+        message: isConnected ? "News service is working" : "News service connection failed"
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        connected: false, 
+        message: "News service test failed",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
