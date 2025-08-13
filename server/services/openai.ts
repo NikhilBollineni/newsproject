@@ -156,10 +156,21 @@ export async function generateAIInsights(articles: any[]): Promise<{
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
     
+    // Ensure arrays contain only strings, not objects
+    const sanitizeArray = (arr: any[]): string[] => {
+      return arr.map(item => 
+        typeof item === 'string' ? item : 
+        typeof item === 'object' ? JSON.stringify(item) : 
+        String(item)
+      );
+    };
+    
     return {
-      marketOpportunities: result.marketOpportunities || [],
-      riskAlerts: result.riskAlerts || [],
-      trendAnalysis: result.trendAnalysis || 'No trend analysis available'
+      marketOpportunities: sanitizeArray(result.marketOpportunities || []),
+      riskAlerts: sanitizeArray(result.riskAlerts || []),
+      trendAnalysis: typeof result.trendAnalysis === 'string' ? 
+        result.trendAnalysis : 
+        String(result.trendAnalysis) || 'No trend analysis available'
     };
   } catch (error) {
     console.error('Failed to generate AI insights:', error);

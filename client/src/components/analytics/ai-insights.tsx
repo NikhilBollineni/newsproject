@@ -51,7 +51,10 @@ export default function AIInsights() {
                 Market Opportunity:
               </p>
               <p className="text-muted-foreground">
-                {insights.marketOpportunities[0]}
+                {typeof insights.marketOpportunities[0] === 'string' 
+                  ? insights.marketOpportunities[0]
+                  : JSON.stringify(insights.marketOpportunities[0])
+                }
               </p>
             </div>
           )}
@@ -63,7 +66,10 @@ export default function AIInsights() {
                 Risk Alert:
               </p>
               <p className="text-muted-foreground">
-                {insights.riskAlerts[0]}
+                {typeof insights.riskAlerts[0] === 'string' 
+                  ? insights.riskAlerts[0]
+                  : JSON.stringify(insights.riskAlerts[0])
+                }
               </p>
             </div>
           )}
@@ -74,7 +80,10 @@ export default function AIInsights() {
                 Trend Analysis:
               </p>
               <p className="text-muted-foreground">
-                {insights.trendAnalysis}
+                {typeof insights.trendAnalysis === 'string' 
+                  ? insights.trendAnalysis
+                  : JSON.stringify(insights.trendAnalysis)
+                }
               </p>
             </div>
           )}
