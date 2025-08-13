@@ -88,9 +88,9 @@ export default function NewsArticle({ article }: NewsArticleProps) {
         </div>
         
         {/* Title */}
-        {article.url ? (
+        {article.aiAnalysis?.sourceUrl ? (
           <a
-            href={article.url}
+            href={article.aiAnalysis.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm font-semibold text-foreground mb-2 hover:text-primary cursor-pointer line-clamp-3 flex-grow-0 block"
@@ -139,12 +139,12 @@ export default function NewsArticle({ article }: NewsArticleProps) {
             {article.source}
           </span>
           <div className="flex items-center space-x-1 flex-shrink-0">
-            {(article.url || article.aiAnalysis?.sourceUrl) && (
+            {article.aiAnalysis?.sourceUrl && (
               <Button
                 variant="ghost"
                 size="sm"
                 className="p-1 h-6 w-6 text-muted-foreground hover:text-primary transition-colors"
-                onClick={() => window.open(article.url || article.aiAnalysis?.sourceUrl, '_blank', 'noopener,noreferrer')}
+                onClick={() => window.open(article.aiAnalysis.sourceUrl, '_blank', 'noopener,noreferrer')}
                 title="Read full article"
                 data-testid={`button-read-full-${article.id}`}
               >
