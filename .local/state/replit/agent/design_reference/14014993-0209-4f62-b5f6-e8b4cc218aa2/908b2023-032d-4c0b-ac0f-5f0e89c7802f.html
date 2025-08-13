@@ -1,0 +1,503 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HVAC Intelligence Platform - Industry News & Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#2563EB',
+                        secondary: '#64748B',
+                        accent: '#059669',
+                        surface: '#FFFFFF',
+                        background: '#F8FAFC',
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="bg-background font-sans">
+    <!-- @COMPONENT: AppLayout -->
+    <div class="flex h-screen bg-background">
+        <!-- @COMPONENT: Sidebar -->
+        <aside class="w-64 bg-surface shadow-lg border-r border-gray-200 flex flex-col">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                        <i class="fas fa-wind text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">HVAC Intel</h1>
+                        <p class="text-sm text-secondary">Industry Intelligence</p>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="flex-1 p-4 space-y-2">
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 bg-blue-50 text-primary rounded-lg font-medium" data-mock="true">
+                    <i class="fas fa-newspaper w-5"></i>
+                    <span>News Feed</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" data-mock="true">
+                    <i class="fas fa-chart-bar w-5"></i>
+                    <span>Analytics</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" data-mock="true">
+                    <i class="fas fa-upload w-5"></i>
+                    <span>Document Analysis</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" data-mock="true">
+                    <i class="fas fa-bookmark w-5"></i>
+                    <span>Bookmarks</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" data-mock="true">
+                    <i class="fas fa-search w-5"></i>
+                    <span>Search</span>
+                </a>
+            </nav>
+            
+            <div class="p-4 border-t border-gray-200">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-gray-300 rounded-full"></div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900" data-mock="true">John Smith</p>
+                        <p class="text-xs text-secondary" data-mock="true">Industry Analyst</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        <!-- @END_COMPONENT: Sidebar -->
+
+        <!-- @COMPONENT: MainContent -->
+        <main class="flex-1 overflow-hidden">
+            <!-- @COMPONENT: Header -->
+            <header class="bg-surface border-b border-gray-200 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Industry News Feed</h2>
+                        <p class="text-secondary">Real-time HVAC & BESS industry intelligence</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <!-- @COMPONENT: SearchBar -->
+                        <div class="relative">
+                            <input type="text" placeholder="Search articles..." class="w-80 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" data-mock="true">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        </div>
+                        <!-- @END_COMPONENT: SearchBar -->
+                        <button class="p-2 text-gray-400 hover:text-gray-600" data-mock="true">
+                            <i class="fas fa-bell text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            <!-- @END_COMPONENT: Header -->
+
+            <div class="flex h-full">
+                <!-- @COMPONENT: ContentArea -->
+                <div class="flex-1 p-6 overflow-y-auto">
+                    <!-- @COMPONENT: QuickStats -->
+                    <div class="grid grid-cols-4 gap-6 mb-6">
+                        <div class="bg-surface p-6 rounded-xl shadow-sm border border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-secondary">Today's Articles</p>
+                                    <p class="text-2xl font-bold text-gray-900" data-bind="stats.todayArticles">24</p>
+                                </div>
+                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-newspaper text-primary text-lg"></i>
+                                </div>
+                            </div>
+                            <div class="flex items-center mt-4 text-sm">
+                                <span class="text-accent">↗ 12%</span>
+                                <span class="text-secondary ml-2">from yesterday</span>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-surface p-6 rounded-xl shadow-sm border border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-secondary">Positive Sentiment</p>
+                                    <p class="text-2xl font-bold text-gray-900" data-bind="stats.positiveSentiment">68%</p>
+                                </div>
+                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-smile text-accent text-lg"></i>
+                                </div>
+                            </div>
+                            <div class="flex items-center mt-4 text-sm">
+                                <span class="text-accent">↗ 5%</span>
+                                <span class="text-secondary ml-2">this week</span>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-surface p-6 rounded-xl shadow-sm border border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-secondary">HVAC Mentions</p>
+                                    <p class="text-2xl font-bold text-gray-900" data-bind="stats.hvacMentions">156</p>
+                                </div>
+                                <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-wind text-orange-600 text-lg"></i>
+                                </div>
+                            </div>
+                            <div class="flex items-center mt-4 text-sm">
+                                <span class="text-red-500">↘ 3%</span>
+                                <span class="text-secondary ml-2">from last week</span>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-surface p-6 rounded-xl shadow-sm border border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-secondary">BESS Articles</p>
+                                    <p class="text-2xl font-bold text-gray-900" data-bind="stats.bessArticles">89</p>
+                                </div>
+                                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-battery-full text-purple-600 text-lg"></i>
+                                </div>
+                            </div>
+                            <div class="flex items-center mt-4 text-sm">
+                                <span class="text-accent">↗ 18%</span>
+                                <span class="text-secondary ml-2">trending up</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- @END_COMPONENT: QuickStats -->
+
+                    <!-- @COMPONENT: FilterBar -->
+                    <div class="bg-surface p-4 rounded-xl shadow-sm border border-gray-200 mb-6">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <select class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary" data-mock="true">
+                                    <option>All Categories</option>
+                                    <option>Product Launches</option>
+                                    <option>Market Trends</option>
+                                    <option>Competitor Financials</option>
+                                    <option>Regulatory Compliance</option>
+                                </select>
+                                
+                                <select class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary" data-mock="true">
+                                    <option>All Industries</option>
+                                    <option>HVAC</option>
+                                    <option>BESS</option>
+                                </select>
+                                
+                                <select class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary" data-mock="true">
+                                    <option>All Sentiment</option>
+                                    <option>Positive</option>
+                                    <option>Neutral</option>
+                                    <option>Negative</option>
+                                </select>
+                            </div>
+                            
+                            <div class="flex items-center space-x-2">
+                                <button class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors" data-mock="true">
+                                    <i class="fas fa-sync mr-2"></i>Refresh Feed
+                                </button>
+                                <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors" data-mock="true">
+                                    <i class="fas fa-download mr-2"></i>Export
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- @END_COMPONENT: FilterBar -->
+
+                    <!-- @COMPONENT: NewsFeed -->
+                    <div class="space-y-4">
+                        <!-- @MAP: articles.map(article => ( -->
+                        <article class="bg-surface p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow" data-mock="true">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-3 mb-3">
+                                        <span class="px-3 py-1 bg-blue-100 text-primary text-xs font-medium rounded-full">Product Launch</span>
+                                        <span class="px-3 py-1 bg-green-100 text-accent text-xs font-medium rounded-full">Positive</span>
+                                        <span class="px-3 py-1 bg-orange-100 text-orange-600 text-xs font-medium rounded-full">HVAC</span>
+                                        <span class="text-xs text-secondary">2 hours ago</span>
+                                    </div>
+                                    
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-2 hover:text-primary cursor-pointer">
+                                        Carrier Introduces Revolutionary Smart HVAC System with AI-Powered Energy Optimization
+                                    </h3>
+                                    
+                                    <p class="text-secondary leading-relaxed mb-4">
+                                        Carrier Global Corporation announces the launch of their next-generation smart HVAC system featuring advanced AI algorithms for predictive maintenance and energy efficiency optimization. The system promises up to 30% energy savings...
+                                    </p>
+                                    
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-4 text-sm text-secondary">
+                                            <span><i class="fas fa-eye mr-1"></i>1.2k views</span>
+                                            <span><i class="fas fa-thumbs-up mr-1"></i>89% positive</span>
+                                            <span>Source: HVAC Industry Today</span>
+                                        </div>
+                                        
+                                        <div class="flex items-center space-x-2">
+                                            <button class="p-2 text-gray-400 hover:text-primary transition-colors" title="Bookmark" data-mock="true">
+                                                <i class="fas fa-bookmark"></i>
+                                            </button>
+                                            <button class="p-2 text-gray-400 hover:text-primary transition-colors" title="Share" data-mock="true">
+                                                <i class="fas fa-share"></i>
+                                            </button>
+                                            <button class="p-2 text-gray-400 hover:text-primary transition-colors" title="Analyze with AI" data-mock="true">
+                                                <i class="fas fa-robot"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="bg-surface p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow" data-mock="true">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-3 mb-3">
+                                        <span class="px-3 py-1 bg-purple-100 text-purple-600 text-xs font-medium rounded-full">Market Trends</span>
+                                        <span class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">Neutral</span>
+                                        <span class="px-3 py-1 bg-green-100 text-green-600 text-xs font-medium rounded-full">BESS</span>
+                                        <span class="text-xs text-secondary">4 hours ago</span>
+                                    </div>
+                                    
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-2 hover:text-primary cursor-pointer">
+                                        Global Battery Energy Storage Market Expected to Reach $15.1B by 2027
+                                    </h3>
+                                    
+                                    <p class="text-secondary leading-relaxed mb-4">
+                                        New market research indicates significant growth in the BESS sector, driven by renewable energy adoption and grid modernization initiatives. Key players include Tesla, LG Energy Solution, and BYD...
+                                    </p>
+                                    
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-4 text-sm text-secondary">
+                                            <span><i class="fas fa-eye mr-1"></i>856 views</span>
+                                            <span><i class="fas fa-thumbs-up mr-1"></i>71% positive</span>
+                                            <span>Source: Energy Storage News</span>
+                                        </div>
+                                        
+                                        <div class="flex items-center space-x-2">
+                                            <button class="p-2 text-gray-400 hover:text-primary transition-colors" title="Bookmark" data-mock="true">
+                                                <i class="far fa-bookmark"></i>
+                                            </button>
+                                            <button class="p-2 text-gray-400 hover:text-primary transition-colors" title="Share" data-mock="true">
+                                                <i class="fas fa-share"></i>
+                                            </button>
+                                            <button class="p-2 text-gray-400 hover:text-primary transition-colors" title="Analyze with AI" data-mock="true">
+                                                <i class="fas fa-robot"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="bg-surface p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow" data-mock="true">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-3 mb-3">
+                                        <span class="px-3 py-1 bg-red-100 text-red-600 text-xs font-medium rounded-full">Regulatory Compliance</span>
+                                        <span class="px-3 py-1 bg-red-100 text-red-600 text-xs font-medium rounded-full">Negative</span>
+                                        <span class="px-3 py-1 bg-orange-100 text-orange-600 text-xs font-medium rounded-full">HVAC</span>
+                                        <span class="text-xs text-secondary">6 hours ago</span>
+                                    </div>
+                                    
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-2 hover:text-primary cursor-pointer">
+                                        New EPA Regulations Could Impact HVAC Refrigerant Phase-Out Timeline
+                                    </h3>
+                                    
+                                    <p class="text-secondary leading-relaxed mb-4">
+                                        The Environmental Protection Agency announces stricter regulations on hydrofluorocarbon (HFC) refrigerants, potentially accelerating the industry transition to more environmentally friendly alternatives...
+                                    </p>
+                                    
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-4 text-sm text-secondary">
+                                            <span><i class="fas fa-eye mr-1"></i>2.1k views</span>
+                                            <span><i class="fas fa-thumbs-down mr-1"></i>45% negative</span>
+                                            <span>Source: EPA Environmental News</span>
+                                        </div>
+                                        
+                                        <div class="flex items-center space-x-2">
+                                            <button class="p-2 text-primary hover:text-blue-700 transition-colors" title="Bookmarked" data-mock="true">
+                                                <i class="fas fa-bookmark"></i>
+                                            </button>
+                                            <button class="p-2 text-gray-400 hover:text-primary transition-colors" title="Share" data-mock="true">
+                                                <i class="fas fa-share"></i>
+                                            </button>
+                                            <button class="p-2 text-gray-400 hover:text-primary transition-colors" title="Analyze with AI" data-mock="true">
+                                                <i class="fas fa-robot"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                        <!-- @END_MAP )) -->
+                    </div>
+                    <!-- @END_COMPONENT: NewsFeed -->
+
+                    <!-- Load More Button -->
+                    <div class="text-center mt-8">
+                        <button class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors" data-mock="true">
+                            <i class="fas fa-spinner mr-2"></i>Load More Articles
+                        </button>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: ContentArea -->
+
+                <!-- @COMPONENT: AnalyticsSidebar -->
+                <aside class="w-80 bg-surface border-l border-gray-200 p-6 overflow-y-auto">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-6">Analytics Overview</h3>
+                    
+                    <!-- @COMPONENT: SentimentChart -->
+                    <div class="mb-8">
+                        <h4 class="text-sm font-medium text-gray-900 mb-4">Sentiment Analysis</h4>
+                        <div class="relative h-40">
+                            <canvas id="sentimentChart" width="300" height="160"></canvas>
+                        </div>
+                        <div class="flex justify-between text-xs text-secondary mt-2">
+                            <span>Positive: 68%</span>
+                            <span>Neutral: 22%</span>
+                            <span>Negative: 10%</span>
+                        </div>
+                    </div>
+                    <!-- @END_COMPONENT: SentimentChart -->
+
+                    <!-- @COMPONENT: CategoryBreakdown -->
+                    <div class="mb-8">
+                        <h4 class="text-sm font-medium text-gray-900 mb-4">Category Breakdown</h4>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Product Launches</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-16 h-2 bg-gray-200 rounded-full">
+                                        <div class="w-10 h-2 bg-primary rounded-full"></div>
+                                    </div>
+                                    <span class="text-sm font-medium">32</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Market Trends</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-16 h-2 bg-gray-200 rounded-full">
+                                        <div class="w-8 h-2 bg-green-500 rounded-full"></div>
+                                    </div>
+                                    <span class="text-sm font-medium">28</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Financials</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-16 h-2 bg-gray-200 rounded-full">
+                                        <div class="w-6 h-2 bg-purple-500 rounded-full"></div>
+                                    </div>
+                                    <span class="text-sm font-medium">19</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Regulatory</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-16 h-2 bg-gray-200 rounded-full">
+                                        <div class="w-4 h-2 bg-red-500 rounded-full"></div>
+                                    </div>
+                                    <span class="text-sm font-medium">13</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- @END_COMPONENT: CategoryBreakdown -->
+
+                    <!-- @COMPONENT: TrendingTopics -->
+                    <div class="mb-8">
+                        <h4 class="text-sm font-medium text-gray-900 mb-4">Trending Topics</h4>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                                <span class="text-sm text-gray-700">#SmartHVAC</span>
+                                <span class="text-xs text-accent font-medium">+24%</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                                <span class="text-sm text-gray-700">#BatteryStorage</span>
+                                <span class="text-xs text-accent font-medium">+18%</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                                <span class="text-sm text-gray-700">#EnergyEfficiency</span>
+                                <span class="text-xs text-accent font-medium">+12%</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                                <span class="text-sm text-gray-700">#GreenTech</span>
+                                <span class="text-xs text-red-500 font-medium">-5%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- @END_COMPONENT: TrendingTopics -->
+
+                    <!-- @COMPONENT: AIInsights -->
+                    <div class="bg-blue-50 p-4 rounded-xl border border-blue-200">
+                        <h4 class="text-sm font-medium text-gray-900 mb-3 flex items-center">
+                            <i class="fas fa-robot text-primary mr-2"></i>
+                            AI Insights
+                        </h4>
+                        <div class="space-y-3 text-sm">
+                            <div class="p-3 bg-white rounded-lg">
+                                <p class="text-gray-700 mb-2"><strong>Market Opportunity:</strong></p>
+                                <p class="text-gray-600">Smart HVAC systems show 35% growth momentum. Consider tracking Carrier, Honeywell positions.</p>
+                            </div>
+                            <div class="p-3 bg-white rounded-lg">
+                                <p class="text-gray-700 mb-2"><strong>Risk Alert:</strong></p>
+                                <p class="text-gray-600">Regulatory changes may impact traditional refrigerant suppliers in Q2 2024.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- @END_COMPONENT: AIInsights -->
+                </aside>
+                <!-- @END_COMPONENT: AnalyticsSidebar -->
+            </div>
+        </main>
+        <!-- @END_COMPONENT: MainContent -->
+    </div>
+    <!-- @END_COMPONENT: AppLayout -->
+
+    <script>
+        // Initialize Charts
+        (function() {
+            // TODO: Implement real-time data updates via WebSocket or API polling
+            
+            // Sentiment Analysis Doughnut Chart
+            const ctx = document.getElementById('sentimentChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Positive', 'Neutral', 'Negative'],
+                    datasets: [{
+                        data: [68, 22, 10],
+                        backgroundColor: ['#059669', '#64748B', '#EF4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+
+            // TODO: Implement real-time sentiment analysis updates
+            // TODO: Add category filtering functionality
+            // TODO: Implement bookmark system
+            // TODO: Add AI-powered document analysis
+            // TODO: Integrate OpenAI GPT-4 for content analysis
+        })();
+    </script>
+</body>
+</html>
