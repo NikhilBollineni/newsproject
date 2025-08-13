@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Eye, ThumbsUp, Bookmark, Share, Bot } from "lucide-react";
+import { Eye, ThumbsUp, Bookmark, Share, Bot, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Article } from "@/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -139,6 +139,18 @@ export default function NewsArticle({ article }: NewsArticleProps) {
             {article.source}
           </span>
           <div className="flex items-center space-x-1 flex-shrink-0">
+            {(article.url || article.aiAnalysis?.sourceUrl) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="p-1 h-6 w-6 text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => window.open(article.url || article.aiAnalysis?.sourceUrl, '_blank', 'noopener,noreferrer')}
+                title="Read full article"
+                data-testid={`button-read-full-${article.id}`}
+              >
+                <ExternalLink className="w-3 h-3" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
