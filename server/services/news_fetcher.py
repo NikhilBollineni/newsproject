@@ -20,7 +20,7 @@ class HVACNewsFetcher:
             max_results=20
         )
         
-        # HVAC and BESS related search terms
+        # HVAC, BESS, and Finance related search terms
         self.search_terms = [
             'HVAC industry news',
             'heating ventilation air conditioning',
@@ -31,7 +31,17 @@ class HVACNewsFetcher:
             'Tesla Megapack energy storage',
             'grid scale battery storage',
             'HVAC regulations EPA',
-            'energy efficiency HVAC'
+            'energy efficiency HVAC',
+            'financial technology fintech',
+            'banking industry news',
+            'cryptocurrency blockchain',
+            'investment banking',
+            'financial services regulation',
+            'digital payments fintech',
+            'insurance technology insurtech',
+            'venture capital funding',
+            'financial markets analysis',
+            'central bank policy'
         ]
 
     def fetch_articles(self, max_articles=50):
@@ -118,16 +128,23 @@ class HVACNewsFetcher:
             return None
 
     def _determine_industry(self, title, content):
-        """Determine if article is HVAC or BESS related"""
+        """Determine if article is HVAC, BESS, or Finance related"""
         text = (title + ' ' + content).lower()
         
         bess_keywords = ['battery', 'energy storage', 'megapack', 'grid scale', 'bess', 'lithium']
         hvac_keywords = ['hvac', 'heating', 'ventilation', 'air conditioning', 'heat pump', 'refriger']
+        finance_keywords = ['fintech', 'banking', 'cryptocurrency', 'blockchain', 'investment', 'financial', 'finance', 'payment', 'insurance', 'venture capital', 'funding']
         
         bess_score = sum(1 for keyword in bess_keywords if keyword in text)
         hvac_score = sum(1 for keyword in hvac_keywords if keyword in text)
+        finance_score = sum(1 for keyword in finance_keywords if keyword in text)
         
-        return 'BESS' if bess_score > hvac_score else 'HVAC'
+        if finance_score > max(bess_score, hvac_score):
+            return 'Finance'
+        elif bess_score > hvac_score:
+            return 'BESS'
+        else:
+            return 'HVAC'
 
     def _determine_category(self, title, content):
         """Determine article category based on content"""
@@ -176,7 +193,10 @@ class HVACNewsFetcher:
             'Tesla', 'GridModernization', 'RenewableEnergy', 'EPA', 'Regulations',
             'MarketGrowth', 'Innovation', 'Sustainability', 'IoT', 'Automation',
             'CommercialHVAC', 'ResidentialHVAC', 'Carrier', 'Honeywell', 'JohnsonControls',
-            'Trane', 'Rheem', 'LGEnergy', 'BYD', 'EnergyStorage'
+            'Trane', 'Rheem', 'LGEnergy', 'BYD', 'EnergyStorage',
+            'Fintech', 'Blockchain', 'Cryptocurrency', 'DigitalPayments', 'Banking',
+            'Investment', 'VentureCapital', 'InsurTech', 'RegTech', 'WealthTech',
+            'LendingTech', 'CentralBank', 'FinancialRegulation', 'Trading', 'RoboAdvisor'
         ]
         
         # Extract tags that appear in the content

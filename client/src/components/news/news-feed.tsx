@@ -124,6 +124,7 @@ export default function NewsFeed({ searchQuery, showBookmarked }: NewsFeedProps)
                   <SelectItem value="All Industries">All Industries</SelectItem>
                   <SelectItem value="HVAC">HVAC</SelectItem>
                   <SelectItem value="BESS">BESS</SelectItem>
+                  <SelectItem value="Finance">Finance</SelectItem>
                 </SelectContent>
               </Select>
               

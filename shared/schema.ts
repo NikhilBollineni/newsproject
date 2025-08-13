@@ -16,8 +16,9 @@ export const articles = pgTable("articles", {
   content: text("content").notNull(),
   summary: text("summary"),
   source: text("source").notNull(),
+  url: text("url"), // URL to the original article
   category: text("category").notNull(), // Product Launch, Market Trends, Competitor Financials, Regulatory Compliance
-  industry: text("industry").notNull(), // HVAC, BESS
+  industry: text("industry").notNull(), // HVAC, BESS, Finance
   sentiment: text("sentiment").notNull(), // positive, negative, neutral
   sentimentScore: real("sentiment_score").notNull().default(0),
   views: integer("views").notNull().default(0),

@@ -53,7 +53,12 @@ export default function NewsArticle({ article }: NewsArticleProps) {
   };
 
   const getIndustryClass = (industry: string) => {
-    return industry === 'HVAC' ? 'industry-hvac' : 'industry-bess';
+    switch (industry) {
+      case 'HVAC': return 'industry-hvac';
+      case 'BESS': return 'industry-bess';
+      case 'Finance': return 'industry-finance';
+      default: return 'industry-hvac';
+    }
   };
 
   const formatTimeAgo = (dateString: string) => {
@@ -83,14 +88,28 @@ export default function NewsArticle({ article }: NewsArticleProps) {
         </div>
         
         {/* Title */}
-        <h3 
-          className="text-sm font-semibold text-foreground mb-2 hover:text-primary cursor-pointer line-clamp-3 flex-grow-0"
-          onClick={() => setIsExpanded(!isExpanded)}
-          data-testid={`text-title-${article.id}`}
-          title={article.title}
-        >
-          {article.title}
-        </h3>
+        {article.url ? (
+          <a
+            href={article.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-semibold text-foreground mb-2 hover:text-primary cursor-pointer line-clamp-3 flex-grow-0 block"
+            data-testid={`link-title-${article.id}`}
+            title={article.title}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {article.title}
+          </a>
+        ) : (
+          <h3 
+            className="text-sm font-semibold text-foreground mb-2 hover:text-primary cursor-pointer line-clamp-3 flex-grow-0"
+            onClick={() => setIsExpanded(!isExpanded)}
+            data-testid={`text-title-${article.id}`}
+            title={article.title}
+          >
+            {article.title}
+          </h3>
+        )}
         
         {/* Content */}
         <p className="text-xs text-secondary leading-relaxed mb-3 flex-grow line-clamp-4" data-testid={`text-content-${article.id}`}>
