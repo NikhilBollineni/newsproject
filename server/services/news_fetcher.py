@@ -284,7 +284,9 @@ class HVACNewsFetcher:
 
         found_tags: list[str] = []
         for tag in potential_tags:
-            tag_words = tag.lower().replace("hvac", "hvac").split()
+            # Split camel-cased tags (e.g., "SmartHVAC" -> "smart hvac") so each
+            # component can be matched individually within the article text.
+            tag_words = tag.lower().replace("hvac", " hvac").split()
             if all(word in text for word in tag_words):
                 found_tags.append(tag)
 
