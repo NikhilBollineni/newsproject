@@ -73,6 +73,30 @@ export default function NewsFeed({ searchQuery, showBookmarked }: NewsFeedProps)
     }));
   };
 
+  const handleExport = async () => {
+    try {
+      const blob = await articlesApi.exportArticles({
+        ...filters,
+        search: searchQuery,
+        bookmarked: showBookmarked
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'articles.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to export articles",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -160,7 +184,7 @@ export default function NewsFeed({ searchQuery, showBookmarked }: NewsFeedProps)
                 <RefreshCw className={`w-4 h-4 mr-2 ${isRefetching ? 'animate-spin' : ''}`} />
                 Refresh Feed
               </Button>
-              <Button variant="outline" data-testid="button-export">
+              <Button variant="outline" onClick={handleExport} data-testid="button-export">
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
