@@ -23,6 +23,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 from html import unescape
+from pathlib import Path
 
 
 class HVACNewsFetcher:
@@ -70,7 +71,25 @@ class HVACNewsFetcher:
         """Fetch a balanced set of news articles across industries."""
 
         all_articles: list[dict] = []
+
+        # Track titles we've already seen both in this run and from the
+        # existing persisted articles so repeated fetches only return new
+        # items.  This helps avoid merge conflicts when the Node.js layer
+        # appends results to data/news.json.
         seen_titles: set[str] = set()
+
+        data_file = Path(__file__).resolve().parents[2] / "data" / "news.json"
+        if data_file.exists():
+            try:
+                with data_file.open("r", encoding="utf-8") as fh:
+                    for article in json.load(fh):
+                        title = (article.get("title") or "").strip()
+                        if title:
+                            seen_titles.add(title)
+            except Exception:
+                # If the file can't be read or parsed, proceed without
+                # pre-populating seen titles.
+                pass
 
         for industry, terms in self.search_terms.items():
             collected = 0

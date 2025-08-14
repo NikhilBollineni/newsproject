@@ -359,6 +359,30 @@ export class MemStorage implements IStorage {
   }
 
   async createArticle(insertArticle: InsertArticle): Promise<Article> {
+    // Check for an existing article with the same title or URL and update
+    // it instead of creating a duplicate.  This allows repeated fetches to
+    // merge new information cleanly with previously stored articles.
+    for (const existing of Array.from(this.articles.values())) {
+      if (
+        existing.title === insertArticle.title ||
+        (insertArticle.url && existing.url === insertArticle.url)
+      ) {
+        const updated: Article = {
+          ...existing,
+          ...insertArticle,
+          id: existing.id,
+          views: existing.views,
+          isBookmarked: existing.isBookmarked,
+          createdAt: existing.createdAt,
+          summary: insertArticle.summary || existing.summary,
+          publishedAt: insertArticle.publishedAt ?? existing.publishedAt
+        };
+        this.articles.set(existing.id, updated);
+        this.saveArticlesToFile();
+        return updated;
+      }
+    }
+
     const id = randomUUID();
     const article: Article = {
       ...insertArticle,
