@@ -97,6 +97,23 @@ export class MemStorage implements IStorage {
     }
   }
 
+  private appendArticleToFile(article: Article) {
+    try {
+      fs.mkdirSync(path.dirname(this.dataFilePath), { recursive: true });
+      let articles: Article[] = [];
+      try {
+        const data = fs.readFileSync(this.dataFilePath, "utf8");
+        articles = JSON.parse(data);
+      } catch {
+        // File may not exist or be empty
+      }
+      articles.push(article);
+      fs.writeFileSync(this.dataFilePath, JSON.stringify(articles, null, 2));
+    } catch (error) {
+      console.error("Failed to append article to file:", error);
+    }
+  }
+
   private initializeSampleData() {
     // Create sample articles
     const sampleArticles = [
@@ -374,7 +391,7 @@ export class MemStorage implements IStorage {
       publishedAt: insertArticle.publishedAt ?? new Date()
     };
     this.articles.set(id, article);
-    this.saveArticlesToFile();
+    this.appendArticleToFile(article);
     return article;
   }
 
