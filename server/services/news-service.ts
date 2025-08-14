@@ -36,7 +36,7 @@ export class NewsService {
 
       console.log(`Fetched ${articles.length} articles, processing with AI...`);
 
-      // Process articles with AI analysis
+      // Process articles with AI analysis (or basic processing if AI unavailable)
       const processedArticles = await this.processArticlesWithAI(articles);
       
       console.log(`Successfully processed ${processedArticles.length} articles`);
@@ -96,13 +96,39 @@ export class NewsService {
   }
 
   private async processArticlesWithAI(articles: FetchedArticle[]): Promise<InsertArticle[]> {
+    const hasKey = Boolean(
+      process.env.OPENAI_API_KEY ||
+      (process.env.OPENAI_API_KEY_ENV_VAR && process.env[process.env.OPENAI_API_KEY_ENV_VAR])
+    );
+
+    // If no API key is configured, return basic article data without AI enhancement
+    if (!hasKey) {
+      return articles.map(article => ({
+        title: article.title,
+        content: article.content,
+        summary: article.summary,
+        source: article.source,
+        category: article.category,
+        industry: article.industry,
+        sentiment: 'neutral' as const,
+        sentimentScore: 0,
+        tags: article.tags || [],
+        aiAnalysis: {
+          aiEnhanced: false,
+          fetchedAt: new Date().toISOString(),
+          sourceUrl: article.url
+        },
+        publishedAt: new Date(article.publishedAt)
+      }));
+    }
+
     const processedArticles: InsertArticle[] = [];
-    
+
     // Process articles in batches to avoid overwhelming the API
     const batchSize = 5;
     for (let i = 0; i < articles.length; i += batchSize) {
       const batch = articles.slice(i, i + batchSize);
-      
+
       const batchPromises = batch.map(async (article) => {
         try {
           // Get AI analysis for sentiment and category verification
@@ -135,7 +161,7 @@ export class NewsService {
           return processedArticle;
         } catch (error) {
           console.error(`Error processing article "${article.title}":`, error);
-          
+
           // Return article with minimal processing if AI fails
           return {
             title: article.title,
@@ -160,7 +186,7 @@ export class NewsService {
 
       const batchResults = await Promise.all(batchPromises);
       processedArticles.push(...batchResults);
-      
+
       // Small delay between batches to be respectful to the API
       if (i + batchSize < articles.length) {
         await new Promise(resolve => setTimeout(resolve, 1000));

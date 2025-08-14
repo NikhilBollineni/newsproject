@@ -68,7 +68,16 @@ class HVACNewsFetcher:
                 url = (
                     f"https://news.google.com/rss/search?q={query}&hl=en-US&gl=US&ceid=US:en"
                 )
-                with urllib.request.urlopen(url, timeout=10) as response:
+
+                # Some environments block requests with the default Python
+                # user agent which results in empty feeds. Spoof a common
+                # browser user agent so Google News always responds with
+                # results.
+                request = urllib.request.Request(
+                    url,
+                    headers={"User-Agent": "Mozilla/5.0"},
+                )
+                with urllib.request.urlopen(request, timeout=10) as response:
                     root = ET.fromstring(response.read())
 
                 for item in root.findall("./channel/item"):
@@ -284,7 +293,9 @@ class HVACNewsFetcher:
 
         found_tags: list[str] = []
         for tag in potential_tags:
-            tag_words = tag.lower().replace("hvac", "hvac").split()
+            # Split camel-cased tags (e.g., "SmartHVAC" -> "smart hvac") so each
+            # component can be matched individually within the article text.
+            tag_words = tag.lower().replace("hvac", " hvac").split()
             if all(word in text for word in tag_words):
                 found_tags.append(tag)
 
