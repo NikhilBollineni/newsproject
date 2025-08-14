@@ -1,8 +1,15 @@
 import OpenAI from "openai";
 
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key" 
-});
+// Allow API key to be provided either directly via OPENAI_API_KEY or indirectly
+// via a variable name specified in OPENAI_API_KEY_ENV_VAR. The previous
+// implementation mistakenly treated OPENAI_API_KEY_ENV_VAR as the API key
+// itself rather than the name of the environment variable containing the key.
+const envVar = process.env.OPENAI_API_KEY_ENV_VAR;
+const apiKey = process.env.OPENAI_API_KEY
+  ?? (envVar ? process.env[envVar] : undefined)
+  ?? "default_key";
+
+const openai = new OpenAI({ apiKey });
 
 export async function analyzeArticleSentiment(content: string): Promise<{
   sentiment: 'positive' | 'negative' | 'neutral';
