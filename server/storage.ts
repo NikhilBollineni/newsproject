@@ -1,5 +1,7 @@
 import { type User, type InsertUser, type Article, type InsertArticle, type Document, type InsertDocument, type Notification, type InsertNotification } from "@shared/schema";
 import { randomUUID } from "crypto";
+import fs from "fs";
+import path from "path";
 
 export interface IStorage {
   // Users
@@ -49,20 +51,55 @@ export class MemStorage implements IStorage {
   private articles: Map<string, Article>;
   private documents: Map<string, Document>;
   private notifications: Map<string, Notification>;
+  private dataFilePath: string;
 
   constructor() {
     this.users = new Map();
     this.articles = new Map();
     this.documents = new Map();
     this.notifications = new Map();
-    
-    // Initialize with sample data
-    this.initializeSampleData();
+
+     this.dataFilePath = path.join(process.cwd(), "data", "news.json");
+
+    // Load persisted articles if available
+    this.loadArticlesFromFile();
+
+    // Initialize with sample data if no file data present
+    if (this.articles.size === 0) {
+      this.initializeSampleData();
+      this.saveArticlesToFile();
+    }
+  }
+
+  private loadArticlesFromFile() {
+    try {
+      const data = fs.readFileSync(this.dataFilePath, "utf8");
+      const articles: Article[] = JSON.parse(data);
+      for (const article of articles) {
+        this.articles.set(article.id, {
+          ...article,
+          publishedAt: new Date(article.publishedAt),
+          createdAt: new Date(article.createdAt),
+        });
+      }
+    } catch {
+      // File may not exist yet
+    }
+  }
+
+  private saveArticlesToFile() {
+    try {
+      fs.mkdirSync(path.dirname(this.dataFilePath), { recursive: true });
+      const articlesArray = Array.from(this.articles.values());
+      fs.writeFileSync(this.dataFilePath, JSON.stringify(articlesArray, null, 2));
+    } catch (error) {
+      console.error("Failed to save articles to file:", error);
+    }
   }
 
   private initializeSampleData() {
     // Create sample articles
-    const sampleArticles: Article[] = [
+    const sampleArticles = [
       {
         id: randomUUID(),
         title: "Carrier Introduces Revolutionary Smart HVAC System with AI-Powered Energy Optimization",
@@ -246,7 +283,11 @@ export class MemStorage implements IStorage {
     ];
 
     sampleArticles.forEach(article => {
-      this.articles.set(article.id, article);
+      this.articles.set(article.id, {
+        ...article,
+        url: null,
+        aiAnalysis: (article as any).aiAnalysis || {}
+      } as Article);
     });
   }
 
@@ -288,7 +329,8 @@ export class MemStorage implements IStorage {
         articles = articles.filter(a => a.industry === filters.industry);
       }
       if (filters.sentiment && filters.sentiment !== 'All Sentiment') {
-        articles = articles.filter(a => a.sentiment === filters.sentiment.toLowerCase());
+        const sentiment = filters.sentiment.toLowerCase();
+        articles = articles.filter(a => a.sentiment === sentiment);
       }
       if (filters.search) {
         const searchTerm = filters.search.toLowerCase();
@@ -320,13 +362,19 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const article: Article = {
       ...insertArticle,
+      aiAnalysis: insertArticle.aiAnalysis ?? {},
+      url: insertArticle.url ?? null,
+      sentimentScore: insertArticle.sentimentScore ?? 0,
+      tags: insertArticle.tags ?? null,
       id,
       views: 0,
       isBookmarked: false,
       createdAt: new Date(),
-      summary: insertArticle.summary || null
+      summary: insertArticle.summary || null,
+      publishedAt: insertArticle.publishedAt ?? new Date()
     };
     this.articles.set(id, article);
+    this.saveArticlesToFile();
     return article;
   }
 
@@ -336,6 +384,7 @@ export class MemStorage implements IStorage {
 
     const updatedArticle = { ...article, ...updates };
     this.articles.set(id, updatedArticle);
+    this.saveArticlesToFile();
     return updatedArticle;
   }
 
@@ -345,6 +394,7 @@ export class MemStorage implements IStorage {
 
     const updatedArticle = { ...article, isBookmarked: !article.isBookmarked };
     this.articles.set(id, updatedArticle);
+    this.saveArticlesToFile();
     return updatedArticle;
   }
 
@@ -361,6 +411,7 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const document: Document = {
       ...insertDocument,
+      aiAnalysis: insertDocument.aiAnalysis ?? null,
       id,
       uploadedAt: new Date(),
       content: insertDocument.content || null
@@ -447,6 +498,9 @@ export class MemStorage implements IStorage {
     const newNotification: Notification = {
       id: randomUUID(),
       ...notification,
+      data: notification.data ?? null,
+      priority: notification.priority ?? 'medium',
+      read: notification.read ?? false,
       createdAt: new Date()
     };
     

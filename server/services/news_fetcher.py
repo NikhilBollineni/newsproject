@@ -1,225 +1,323 @@
 #!/usr/bin/env python3
+"""Simple HVAC Industry News Fetcher
+
+This script fetches news articles from Google News RSS feeds using only
+Python's standard library. It avoids third-party dependencies that were
+previously causing module import errors (for example, the missing
+`gnews` package).
+
+The script searches for several HVAC, BESS and finance related terms and
+returns a list of formatted article objects in JSON format. Each run
+prints the JSON array to STDOUT so that the Node.js server can consume
+it.
 """
-HVAC Industry News Fetcher using GNews
-Fetches real-time news articles related to HVAC and BESS industries
-"""
+
+from __future__ import annotations
 
 import json
+import re
 import sys
-from datetime import datetime, timedelta
-from gnews import GNews
-import requests
-from dateutil import parser as date_parser
+import urllib.parse
+import urllib.request
+import xml.etree.ElementTree as ET
+from datetime import datetime
+from email.utils import parsedate_to_datetime
+from html import unescape
+
 
 class HVACNewsFetcher:
-    def __init__(self):
-        self.google_news = GNews(
-            language='en',
-            country='US',
-            period='7d',  # Last 7 days
-            max_results=20
-        )
-        
-        # HVAC, BESS, and Finance related search terms
-        self.search_terms = [
-            'HVAC industry news',
-            'heating ventilation air conditioning',
-            'battery energy storage systems BESS',
-            'smart HVAC technology',
-            'heat pump technology',
-            'commercial HVAC equipment',
-            'Tesla Megapack energy storage',
-            'grid scale battery storage',
-            'HVAC regulations EPA',
-            'energy efficiency HVAC',
-            'financial technology fintech',
-            'banking industry news',
-            'cryptocurrency blockchain',
-            'investment banking',
-            'financial services regulation',
-            'digital payments fintech',
-            'insurance technology insurtech',
-            'venture capital funding',
-            'financial markets analysis',
-            'central bank policy'
-        ]
+    """Fetch and format news articles for the application."""
 
-    def fetch_articles(self, max_articles=50):
-        """Fetch news articles related to HVAC and BESS industries"""
-        all_articles = []
-        seen_titles = set()
-        
-        for term in self.search_terms:
-            try:
-                # Search for articles
-                articles = self.google_news.get_news(term)
-                
-                for article in articles:
-                    # Skip duplicates based on title
-                    title = article.get('title', '').strip()
-                    if title in seen_titles or not title:
-                        continue
-                    
-                    seen_titles.add(title)
-                    
-                    # Parse and format article data
-                    formatted_article = self._format_article(article)
-                    if formatted_article:
-                        all_articles.append(formatted_article)
-                    
-                    # Stop if we have enough articles
-                    if len(all_articles) >= max_articles:
-                        break
-                        
-            except Exception as e:
-                print(f"Error fetching articles for term '{term}': {e}", file=sys.stderr)
-                continue
-            
-            if len(all_articles) >= max_articles:
-                break
-        
-        return all_articles[:max_articles]
+    def __init__(self) -> None:
+        # Separate search terms by industry so that we always retrieve a
+        # balanced set of articles.  Previously a single HVAC search could
+        # return enough results to reach the overall limit which meant that
+        # no Finance or BESS articles were ever fetched.  Grouping terms by
+        # industry ensures each area receives coverage.
+        self.search_terms: dict[str, list[str]] = {
+            "HVAC": [
+                "HVAC industry news",
+                "heating ventilation air conditioning",
+                "smart HVAC technology",
+                "heat pump technology",
+                "commercial HVAC equipment",
+                "HVAC regulations EPA",
+                "energy efficiency HVAC",
+            ],
+            "BESS": [
+                "battery energy storage systems BESS",
+                "Tesla Megapack energy storage",
+                "grid scale battery storage",
+            ],
+            "Finance": [
+                "financial technology fintech",
+                "banking industry news",
+                "cryptocurrency blockchain",
+                "investment banking",
+                "financial services regulation",
+                "digital payments fintech",
+                "insurance technology insurtech",
+                "venture capital funding",
+                "financial markets analysis",
+                "central bank policy",
+            ],
+        }
 
-    def _format_article(self, article):
-        """Format a single article for the HVAC Intel platform"""
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+    def fetch_articles(self, max_per_industry: int = 10) -> list[dict]:
+        """Fetch a balanced set of news articles across industries."""
+
+        all_articles: list[dict] = []
+        seen_titles: set[str] = set()
+
+        for industry, terms in self.search_terms.items():
+            collected = 0
+            for term in terms:
+                if collected >= max_per_industry:
+                    break
+                try:
+                    query = urllib.parse.quote(term)
+                    url = (
+                        f"https://news.google.com/rss/search?q={query}&hl=en-US&gl=US&ceid=US:en"
+                    )
+                    with urllib.request.urlopen(url, timeout=10) as response:
+                        root = ET.fromstring(response.read())
+
+                    for item in root.findall("./channel/item"):
+                        title = (item.findtext("title") or "").strip()
+                        if not title or title in seen_titles:
+                            continue
+                        seen_titles.add(title)
+
+                        description = unescape(
+                            re.sub(
+                                "<[^<]+?>",
+                                "",
+                                item.findtext("description") or "",
+                            ).strip()
+                        )
+                        link = (item.findtext("link") or "").strip()
+                        source = (item.findtext("source") or "Unknown Source").strip()
+                        published = item.findtext("pubDate") or ""
+
+                        article = {
+                            "title": title,
+                            "description": description,
+                            "url": link,
+                            "publisher": {"title": source},
+                            "published date": published,
+                        }
+
+                        formatted = self._format_article(article, industry_hint=industry)
+                        if formatted:
+                            all_articles.append(formatted)
+                            collected += 1
+                        if collected >= max_per_industry:
+                            break
+                except Exception as exc:  # pragma: no cover - robustness
+                    print(
+                        f"Error fetching articles for term '{term}': {exc}",
+                        file=sys.stderr,
+                    )
+                    continue
+
+        return all_articles
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+    def _format_article(self, article: dict, industry_hint: str | None = None) -> dict | None:
+        """Format a single article for the HVAC Intel platform."""
+
         try:
-            title = article.get('title', '').strip()
-            description = article.get('description', '').strip()
-            url = article.get('url', '')
-            publisher = article.get('publisher', {}).get('title', 'Unknown Source')
-            published_date = article.get('published date', '')
-            
-            # Skip if essential data is missing
+            title = article.get("title", "").strip()
+            description = article.get("description", "").strip()
+            url = article.get("url", "")
+            publisher = article.get("publisher", {}).get("title", "Unknown Source")
+            published_date = article.get("published date", "")
+
             if not title or not description:
                 return None
-            
-            # Parse published date
+
             try:
-                if published_date:
-                    parsed_date = date_parser.parse(published_date)
-                else:
-                    parsed_date = datetime.now()
-            except:
-                parsed_date = datetime.now()
-            
-            # Determine industry based on content
-            industry = self._determine_industry(title, description)
-            
-            # Determine category based on content
+                parsed_date = (
+                    parsedate_to_datetime(published_date)
+                    if published_date
+                    else datetime.utcnow()
+                )
+            except Exception:
+                parsed_date = datetime.utcnow()
+
+            industry = industry_hint or self._determine_industry(title, description)
             category = self._determine_category(title, description)
-            
-            # Create article object matching the application schema
+
             formatted_article = {
-                'title': title,
-                'content': description,
-                'summary': self._generate_summary(description),
-                'source': publisher,
-                'category': category,
-                'industry': industry,
-                'url': url,
-                'publishedAt': parsed_date.isoformat(),
-                'tags': self._extract_tags(title, description)
+                "title": title,
+                "content": description,
+                "summary": self._generate_summary(description),
+                "source": publisher,
+                "category": category,
+                "industry": industry,
+                "url": url,
+                "publishedAt": parsed_date.isoformat(),
+                "tags": self._extract_tags(title, description),
             }
-            
+
             return formatted_article
-            
-        except Exception as e:
-            print(f"Error formatting article: {e}", file=sys.stderr)
+        except Exception as exc:  # pragma: no cover - robustness
+            print(f"Error formatting article: {exc}", file=sys.stderr)
             return None
 
-    def _determine_industry(self, title, content):
-        """Determine if article is HVAC, BESS, or Finance related"""
-        text = (title + ' ' + content).lower()
-        
-        bess_keywords = ['battery', 'energy storage', 'megapack', 'grid scale', 'bess', 'lithium']
-        hvac_keywords = ['hvac', 'heating', 'ventilation', 'air conditioning', 'heat pump', 'refriger']
-        finance_keywords = ['fintech', 'banking', 'cryptocurrency', 'blockchain', 'investment', 'financial', 'finance', 'payment', 'insurance', 'venture capital', 'funding']
-        
+    def _determine_industry(self, title: str, content: str) -> str:
+        text = (title + " " + content).lower()
+
+        bess_keywords = [
+            "battery",
+            "energy storage",
+            "megapack",
+            "grid scale",
+            "bess",
+            "lithium",
+        ]
+        hvac_keywords = [
+            "hvac",
+            "heating",
+            "ventilation",
+            "air conditioning",
+            "heat pump",
+            "refriger",
+        ]
+        finance_keywords = [
+            "fintech",
+            "banking",
+            "cryptocurrency",
+            "blockchain",
+            "investment",
+            "financial",
+            "finance",
+            "payment",
+            "insurance",
+            "venture capital",
+            "funding",
+        ]
+
         bess_score = sum(1 for keyword in bess_keywords if keyword in text)
         hvac_score = sum(1 for keyword in hvac_keywords if keyword in text)
         finance_score = sum(1 for keyword in finance_keywords if keyword in text)
-        
+
         if finance_score > max(bess_score, hvac_score):
-            return 'Finance'
+            return "Finance"
         elif bess_score > hvac_score:
-            return 'BESS'
+            return "BESS"
         else:
-            return 'HVAC'
+            return "HVAC"
 
-    def _determine_category(self, title, content):
-        """Determine article category based on content"""
-        text = (title + ' ' + content).lower()
-        
-        if any(word in text for word in ['launch', 'new product', 'introduce', 'unveil']):
-            return 'Product Launch'
-        elif any(word in text for word in ['regulation', 'compliance', 'epa', 'law', 'standard']):
-            return 'Regulatory Compliance'
-        elif any(word in text for word in ['market', 'growth', 'forecast', 'trend', 'analysis']):
-            return 'Market Trends'
-        elif any(word in text for word in ['acquisition', 'merger', 'financial', 'revenue', 'profit']):
-            return 'Competitor Financials'
-        elif any(word in text for word in ['technology', 'innovation', 'breakthrough', 'research']):
-            return 'Technology Innovation'
+    def _determine_category(self, title: str, content: str) -> str:
+        text = (title + " " + content).lower()
+
+        if any(word in text for word in ["launch", "new product", "introduce", "unveil"]):
+            return "Product Launch"
+        elif any(word in text for word in ["regulation", "compliance", "epa", "law", "standard"]):
+            return "Regulatory Compliance"
+        elif any(word in text for word in ["market", "growth", "forecast", "trend", "analysis"]):
+            return "Market Trends"
+        elif any(
+            word in text for word in ["acquisition", "merger", "financial", "revenue", "profit"]
+        ):
+            return "Competitor Financials"
+        elif any(
+            word in text
+            for word in ["technology", "innovation", "breakthrough", "research"]
+        ):
+            return "Technology Innovation"
         else:
-            return 'Industry Analysis'
+            return "Industry Analysis"
 
-    def _generate_summary(self, content):
-        """Generate a brief summary from the article content"""
+    def _generate_summary(self, content: str) -> str:
         if len(content) <= 120:
             return content
-        
-        # Find the first sentence or truncate at word boundary
-        sentences = content.split('. ')
+
+        sentences = content.split(". ")
         if sentences and len(sentences[0]) <= 120:
-            return sentences[0] + '.'
-        
-        # Truncate at word boundary
+            return sentences[0] + "."
+
         words = content.split()
-        summary = ''
+        summary = ""
         for word in words:
             if len(summary + word) > 120:
                 break
-            summary += word + ' '
-        
-        return summary.strip() + '...'
+            summary += word + " "
 
-    def _extract_tags(self, title, content):
-        """Extract relevant tags from article content"""
-        text = (title + ' ' + content).lower()
-        
-        # Common industry tags
+        return summary.strip() + "..."
+
+    def _extract_tags(self, title: str, content: str) -> list[str]:
+        text = (title + " " + content).lower()
+
         potential_tags = [
-            'SmartHVAC', 'AI', 'EnergyEfficiency', 'HeatPump', 'BatteryStorage',
-            'Tesla', 'GridModernization', 'RenewableEnergy', 'EPA', 'Regulations',
-            'MarketGrowth', 'Innovation', 'Sustainability', 'IoT', 'Automation',
-            'CommercialHVAC', 'ResidentialHVAC', 'Carrier', 'Honeywell', 'JohnsonControls',
-            'Trane', 'Rheem', 'LGEnergy', 'BYD', 'EnergyStorage',
-            'Fintech', 'Blockchain', 'Cryptocurrency', 'DigitalPayments', 'Banking',
-            'Investment', 'VentureCapital', 'InsurTech', 'RegTech', 'WealthTech',
-            'LendingTech', 'CentralBank', 'FinancialRegulation', 'Trading', 'RoboAdvisor'
+            "SmartHVAC",
+            "AI",
+            "EnergyEfficiency",
+            "HeatPump",
+            "BatteryStorage",
+            "Tesla",
+            "GridModernization",
+            "RenewableEnergy",
+            "EPA",
+            "Regulations",
+            "MarketGrowth",
+            "Innovation",
+            "Sustainability",
+            "IoT",
+            "Automation",
+            "CommercialHVAC",
+            "ResidentialHVAC",
+            "Carrier",
+            "Honeywell",
+            "JohnsonControls",
+            "Trane",
+            "Rheem",
+            "LGEnergy",
+            "BYD",
+            "EnergyStorage",
+            "Fintech",
+            "Blockchain",
+            "Cryptocurrency",
+            "DigitalPayments",
+            "Banking",
+            "Investment",
+            "VentureCapital",
+            "InsurTech",
+            "RegTech",
+            "WealthTech",
+            "LendingTech",
+            "CentralBank",
+            "FinancialRegulation",
+            "Trading",
+            "RoboAdvisor",
         ]
-        
-        # Extract tags that appear in the content
-        found_tags = []
+
+        found_tags: list[str] = []
         for tag in potential_tags:
-            tag_words = tag.lower().replace('hvac', 'hvac').split()
+            tag_words = tag.lower().replace("hvac", "hvac").split()
             if all(word in text for word in tag_words):
                 found_tags.append(tag)
-        
-        return found_tags[:5]  # Limit to 5 tags
 
-def main():
-    """Main function to fetch and return articles as JSON"""
+        return found_tags[:5]
+
+
+def main() -> None:
     try:
         fetcher = HVACNewsFetcher()
-        articles = fetcher.fetch_articles(max_articles=30)
-        
-        # Output articles as JSON
+        # Fetch up to 10 articles for each industry for a balanced result set
+        articles = fetcher.fetch_articles(max_per_industry=10)
         print(json.dumps(articles, indent=2))
-        
-    except Exception as e:
-        print(f"Error in main: {e}", file=sys.stderr)
+    except Exception as exc:  # pragma: no cover - robustness
+        print(f"Error in main: {exc}", file=sys.stderr)
         sys.exit(1)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
+
