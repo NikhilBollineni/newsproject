@@ -6,6 +6,8 @@ import { insertArticleSchema, insertDocumentSchema, insertNotificationSchema } f
 import { analyzeArticleSentiment, categorizeArticle, analyzeDocument, generateAIInsights } from "./services/openai";
 import { NewsService } from "./services/news-service";
 import { notificationService } from "./services/notification-service";
+import { articlesToCSV } from "./services/export";
+import { Readable } from "stream";
 import multer from "multer";
 import { z } from "zod";
 
@@ -28,11 +30,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         search: req.query.search as string,
         bookmarked: req.query.bookmarked === 'true'
       };
-      
+
       const articles = await storage.getArticles(filters);
       res.json(articles);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch articles" });
+    }
+  });
+
+  app.get("/api/articles/export", async (req, res) => {
+    try {
+      const filters = {
+        category: req.query.category as string,
+        industry: req.query.industry as string,
+        sentiment: req.query.sentiment as string,
+        search: req.query.search as string,
+        bookmarked: req.query.bookmarked === 'true'
+      };
+
+      const articles = await storage.getArticles(filters);
+      const csv = articlesToCSV(articles);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="articles.csv"');
+      const stream = Readable.from([csv]);
+      stream.pipe(res);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to export articles" });
     }
   });
 

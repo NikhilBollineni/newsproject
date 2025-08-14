@@ -15,8 +15,25 @@ export const articlesApi = {
     if (filters?.sentiment) params.append('sentiment', filters.sentiment);
     if (filters?.search) params.append('search', filters.search);
     if (filters?.bookmarked) params.append('bookmarked', 'true');
-    
+
     return fetch(`/api/articles?${params}`).then(res => res.json());
+  },
+
+  exportArticles: (filters?: {
+    category?: string;
+    industry?: string;
+    sentiment?: string;
+    search?: string;
+    bookmarked?: boolean;
+  }): Promise<Blob> => {
+    const params = new URLSearchParams();
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.industry) params.append('industry', filters.industry);
+    if (filters?.sentiment) params.append('sentiment', filters.sentiment);
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.bookmarked) params.append('bookmarked', 'true');
+
+    return fetch(`/api/articles/export?${params}`).then(res => res.blob());
   },
 
   getArticle: (id: string): Promise<Article> =>
