@@ -118,8 +118,19 @@ class HVACNewsFetcher:
             publisher = article.get("publisher", {}).get("title", "Unknown Source")
             published_date = article.get("published date", "")
 
-            if not title or not description:
+            if not title:
                 return None
+
+            content = description
+            if not content:
+                # Attempt to download the full article text; fall back to title
+                try:
+                    full_article = self.client.get_full_article(url) if url else None
+                    content = getattr(full_article, "text", "").strip() if full_article else ""
+                except Exception:
+                    content = ""
+                if not content:
+                    content = title
 
             try:
                 parsed_date = (
@@ -130,19 +141,19 @@ class HVACNewsFetcher:
             except Exception:
                 parsed_date = datetime.utcnow()
 
-            industry = self._determine_industry(title, description)
-            category = self._determine_category(title, description)
+            industry = self._determine_industry(title, content)
+            category = self._determine_category(title, content)
 
             formatted_article = {
                 "title": title,
-                "content": description,
-                "summary": self._generate_summary(description),
+                "content": content,
+                "summary": self._generate_summary(content),
                 "source": publisher,
                 "category": category,
                 "industry": industry,
                 "url": url,
                 "publishedAt": parsed_date.isoformat(),
-                "tags": self._extract_tags(title, description),
+                "tags": self._extract_tags(title, content),
             }
 
             return formatted_article
