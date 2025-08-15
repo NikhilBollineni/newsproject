@@ -74,7 +74,17 @@ export class NewsService {
         stderr += data.toString();
       });
 
+      // Set timeout for the process using configurable env var with 5 min default
+      const timeoutMsEnv = parseInt(process.env.NEWS_FETCH_TIMEOUT_MS || '', 10);
+      const timeoutMs = Number.isFinite(timeoutMsEnv) ? timeoutMsEnv : 300000;
+      const timeout = setTimeout(() => {
+        pythonProcess.kill();
+        reject(new Error('News fetching timeout'));
+      }, timeoutMs);
+
       pythonProcess.on('close', (code) => {
+        clearTimeout(timeout);
+
         if (code !== 0) {
           console.error('Python script error:', stderr);
           reject(new Error(`Python script exited with code ${code}: ${stderr}`));
@@ -92,15 +102,10 @@ export class NewsService {
       });
 
       pythonProcess.on('error', (error) => {
+        clearTimeout(timeout);
         console.error('Failed to start Python script:', error);
         reject(new Error('Failed to start news fetcher'));
       });
-
-      // Set timeout for the process
-      setTimeout(() => {
-        pythonProcess.kill();
-        reject(new Error('News fetching timeout'));
-      }, 60000); // 60 second timeout
     });
   }
 
