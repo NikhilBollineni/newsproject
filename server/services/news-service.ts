@@ -1,5 +1,6 @@
 import { spawn } from 'child_process';
 import path from 'path';
+import fs from 'fs';
 import { analyzeArticleSentiment, categorizeArticle } from './openai';
 import type { InsertArticle } from '@shared/schema';
 
@@ -38,7 +39,15 @@ export class NewsService {
 
       // Process articles with AI analysis (or basic processing if AI unavailable)
       const processedArticles = await this.processArticlesWithAI(articles);
-      
+      // Persist fetched articles to JSON file
+      try {
+        const dataPath = path.join(process.cwd(), 'data', 'news.json');
+        fs.mkdirSync(path.dirname(dataPath), { recursive: true });
+        fs.writeFileSync(dataPath, JSON.stringify(processedArticles, null, 2));
+      } catch (err) {
+        console.error('Failed to write news data file:', err);
+      }
+
       console.log(`Successfully processed ${processedArticles.length} articles`);
       return processedArticles;
 
