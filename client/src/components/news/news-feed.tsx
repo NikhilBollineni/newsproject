@@ -196,13 +196,15 @@ export default function NewsFeed({ searchQuery, showBookmarked }: NewsFeedProps)
       {/* Articles Grid */}
       <div data-testid="news-feed-articles">
         {articles.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <p className="text-muted-foreground" data-testid="text-no-articles">
-                {showBookmarked ? "No bookmarked articles found." : "No articles found matching your filters."}
-              </p>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardContent className="p-8 text-center">
+                <p className="text-muted-foreground" data-testid="text-no-articles">
+                  {showBookmarked
+                    ? "No bookmarked articles found."
+                    : "No articles available. Try fetching news or check back later."}
+                </p>
+              </CardContent>
+            </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
             {articles.map((article) => (
