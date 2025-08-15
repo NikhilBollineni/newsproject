@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
-"""Simple HVAC Industry News Fetcher
+"""Simple HVAC Industry News Fetcher.
 
-This script fetches news articles from Google News RSS feeds using only
-Python's standard library. It avoids third-party dependencies that were
-previously causing module import errors (for example, the missing
-`gnews` package).
-
-The script searches for several HVAC, BESS and finance related terms and
-returns a list of formatted article objects in JSON format. Each run
-prints the JSON array to STDOUT so that the Node.js server can consume
-it.
+This script now uses the :mod:`gnews` package to query Google News for
+HVAC, BESS and finance related articles. The resulting articles are
+normalized into a structure consumed by the Node.js server and printed
+to STDOUT as JSON.
 """
 
 from __future__ import annotations
@@ -17,12 +12,11 @@ from __future__ import annotations
 import json
 import re
 import sys
-import urllib.parse
-import urllib.request
-import xml.etree.ElementTree as ET
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 from html import unescape
+
+from gnews import GNews
 
 
 class HVACNewsFetcher:
@@ -53,6 +47,10 @@ class HVACNewsFetcher:
             "central bank policy",
         ]
 
+        # Configure GNews client
+        self.client = GNews(language="en", country="US")
+        self.client.max_results = 100
+
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
@@ -62,59 +60,48 @@ class HVACNewsFetcher:
         all_articles: list[dict] = []
         seen_titles: set[str] = set()
 
+        try:
+            top_news = self.client.get_top_news()
+        except Exception as exc:  # pragma: no cover - network robustness
+            raise RuntimeError(f"GNews error fetching top news: {exc}") from exc
+
+        def process_item(item: dict) -> None:
+            title = (item.get("title") or "").strip()
+            if not title or title in seen_titles:
+                return
+            seen_titles.add(title)
+
+            description = unescape(
+                re.sub("<[^<]+?>", "", item.get("description") or "").strip()
+            )
+            article = {
+                "title": title,
+                "description": description,
+                "url": (item.get("url") or "").strip(),
+                "publisher": item.get("publisher", {}),
+                "published date": item.get("published date", ""),
+            }
+            formatted = self._format_article(article)
+            if formatted:
+                all_articles.append(formatted)
+
+        for item in top_news:
+            process_item(item)
+            if len(all_articles) >= max_articles:
+                return all_articles[:max_articles]
+
         for term in self.search_terms:
             try:
-                query = urllib.parse.quote(term)
-                url = (
-                    f"https://news.google.com/rss/search?q={query}&hl=en-US&gl=US&ceid=US:en"
-                )
+                search_results = self.client.get_news(term)
+            except Exception as exc:  # pragma: no cover - network robustness
+                raise RuntimeError(
+                    f"GNews error fetching articles for term '{term}': {exc}"
+                ) from exc
 
-                # Some environments block requests with the default Python
-                # user agent which results in empty feeds. Spoof a common
-                # browser user agent so Google News always responds with
-                # results.
-                request = urllib.request.Request(
-                    url,
-                    headers={"User-Agent": "Mozilla/5.0"},
-                )
-                with urllib.request.urlopen(request, timeout=10) as response:
-                    root = ET.fromstring(response.read())
-
-                for item in root.findall("./channel/item"):
-                    title = (item.findtext("title") or "").strip()
-                    if not title or title in seen_titles:
-                        continue
-                    seen_titles.add(title)
-
-                    description = unescape(
-                        re.sub("<[^<]+?>", "", item.findtext("description") or "").strip()
-                    )
-                    link = (item.findtext("link") or "").strip()
-                    source = (item.findtext("source") or "Unknown Source").strip()
-                    published = item.findtext("pubDate") or ""
-
-                    article = {
-                        "title": title,
-                        "description": description,
-                        "url": link,
-                        "publisher": {"title": source},
-                        "published date": published,
-                    }
-
-                    formatted = self._format_article(article)
-                    if formatted:
-                        all_articles.append(formatted)
-
-                    if len(all_articles) >= max_articles:
-                        break
-            except Exception as exc:  # pragma: no cover - robustness
-                print(
-                    f"Error fetching articles for term '{term}': {exc}", file=sys.stderr
-                )
-                continue
-
-            if len(all_articles) >= max_articles:
-                break
+            for item in search_results:
+                process_item(item)
+                if len(all_articles) >= max_articles:
+                    return all_articles[:max_articles]
 
         return all_articles[:max_articles]
 
@@ -308,7 +295,8 @@ def main() -> None:
         articles = fetcher.fetch_articles(max_articles=30)
         print(json.dumps(articles, indent=2))
     except Exception as exc:  # pragma: no cover - robustness
-        print(f"Error in main: {exc}", file=sys.stderr)
+        # Surface errors to the Node handler in a structured format
+        print(json.dumps({"error": str(exc)}))
         sys.exit(1)
 
 
